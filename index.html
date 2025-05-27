@@ -29,8 +29,16 @@
   </style>
 </head>
 <body>
-  <h1>UK Tax Code Explainer</h1>
+  <div style="text-align: center;">
+    <span style="font-size:90px;">
+    🇬🇧 <img width='100px' src="https://i.ibb.co/Hf4crjM9/a209d691-fc54-4b60-aca0-a52359d4825a-800x800h-removebg-preview.png"> 🇬🇧 
+    </span>
+    <h1>UK Tax Code Explainer</h1>
+  </div>
+  <small>Made by <a href="https://cemrekarakas.com">cemre</a></small>
+
   <p>Enter a UK tax code (e.g. <code>1257L</code>, <code>BR</code>, <code>K475 M1/W1</code>):</p>
+
   <div style="display: flex; gap: 0.5rem;">
     <input type="text" id="taxCodeInput" placeholder="Enter tax code" style="flex: 1;" />
     <button onclick="explainTaxCode()">Explain</button>
@@ -41,113 +49,153 @@
   <div id="followup" style="display:none;">
     <p><strong>Still have questions?</strong></p>
     <div style="display: flex; gap: 0.5rem;">
-      <input type="text" id="followupQuestion" placeholder="Ask ChatGPT something about this code..."  style="flex: 1;"/>
+      <input type="text" id="followupQuestion" placeholder="Ask ChatGPT something about this code..." style="flex: 1;" />
       <button onclick="askChatGPT()">Ask ChatGPT</button>
     </div>
   </div>
 
-<script>
-  let lastExplanation = "";
+  <script>
+    let lastExplanation = "";
 
-  function explainTaxCode() {
-    const rawInput = document.getElementById('taxCodeInput').value.trim().toUpperCase();
-    const output = document.getElementById('output');
-    const followup = document.getElementById('followup');
-    output.innerHTML = '';
-    followup.style.display = 'none';
-    lastExplanation = '';
+    function explainTaxCode() {
+      const inputEl = document.getElementById('taxCodeInput');
+      const rawInput = inputEl.value.trim().toUpperCase();
+      const output = document.getElementById('output');
+      const followup = document.getElementById('followup');
+      output.innerHTML = '';
+      followup.style.display = 'none';
+      lastExplanation = '';
 
-    if (!rawInput) {
-      output.textContent = "Please enter a tax code.";
-      return;
-    }
-
-    let cleaned = rawInput.replace(/\s+/g, '');
-
-    // Capture emergency indicators (W1, M1, X, W1/M1, M1/W1)
-    const emergencyIndicators = [];
-    if (/W1\/M1|M1\/W1/.test(cleaned)) {
-      emergencyIndicators.push("W1", "M1");
-      cleaned = cleaned.replace(/(W1\/M1|M1\/W1)/g, '');
-    } else {
-      if (cleaned.includes('W1')) {
-        emergencyIndicators.push("W1");
-        cleaned = cleaned.replace(/W1/g, '');
+      if (!rawInput) {
+        output.textContent = "Please enter a tax code.";
+        return;
       }
-      if (cleaned.includes('M1')) {
-        emergencyIndicators.push("M1");
-        cleaned = cleaned.replace(/M1/g, '');
-      }
-    }
-    if (cleaned.includes('X')) {
-      emergencyIndicators.push("X");
-      cleaned = cleaned.replace(/X/g, '');
-    }
 
-    let explanation = `<strong>Tax Code:</strong> ${rawInput}<br><br>`;
-    let match = cleaned.match(/^([K]?)(\d{1,4})([LMNT])?$/) || cleaned.match(/^(BR|D0|D1|NT|0T)$/);
+      // Update URL query param with current code without reloading the page
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('code', rawInput);
+      window.history.replaceState(null, '', newUrl.toString());
 
-    if (!match) {
-      output.textContent = "Unrecognized tax code format.";
-      return;
-    }
+      let cleaned = rawInput.replace(/\s+/g, '');
 
-    // Standard codes
-    if (match[2]) {
-      const prefix = match[1];
-      const number = parseInt(match[2]);
-      const letter = match[3] || '';
-
-      if (prefix === 'K') {
-        explanation += `This is a <strong>K code</strong>. You're being taxed on an extra <strong>£${number * 10}</strong> of income (e.g. untaxed benefits or company car).<br>`;
+      // Capture emergency indicators
+      const emergencyIndicators = [];
+      if (/W1\/M1|M1\/W1/.test(cleaned)) {
+        emergencyIndicators.push("W1", "M1");
+        cleaned = cleaned.replace(/(W1\/M1|M1\/W1)/g, '');
       } else {
-        explanation += `This means you have a tax-free Personal Allowance of <strong>£${number * 10}</strong>.<br>`;
+        if (cleaned.includes('W1')) {
+          emergencyIndicators.push("W1");
+          cleaned = cleaned.replace(/W1/g, '');
+        }
+        if (cleaned.includes('M1')) {
+          emergencyIndicators.push("M1");
+          cleaned = cleaned.replace(/M1/g, '');
+        }
+      }
+      if (cleaned.includes('X')) {
+        emergencyIndicators.push("X");
+        cleaned = cleaned.replace(/X/g, '');
       }
 
-      const letterDescriptions = {
-        L: "Standard allowance – you’re entitled to the basic Personal Allowance.",
-        M: "Marriage Allowance – you’ve received 10% of your partner’s allowance.",
-        N: "Marriage Allowance – you’ve transferred 10% of your allowance to your partner.",
-        T: "Your situation requires further review (complex allowance or other adjustments)."
-      };
+      let explanation = `<strong>Tax Code:</strong> ${rawInput}<br><br>`;
+      let match = cleaned.match(/^([K]?)(\d{1,4})([LMNT])?$/) || cleaned.match(/^(BR|D0|D1|NT|0T)$/);
 
-      if (letterDescriptions[letter]) {
-        explanation += `<br><strong>Letter '${letter}':</strong> ${letterDescriptions[letter]}`;
+      if (!match) {
+        output.textContent = "Unrecognized tax code format.";
+        return;
       }
 
-    } else if (match[1]) {
-      // Fixed codes
-      const code = match[1];
-      const fixedDescriptions = {
-        BR: "All income is taxed at the basic rate (20%). Common for second jobs.",
-        D0: "All income is taxed at the higher rate (40%).",
-        D1: "All income is taxed at the additional rate (45%).",
-        NT: "No tax will be taken from your income.",
-        "0T": "No Personal Allowance is applied – you’re taxed from the first £ earned."
-      };
-      explanation += fixedDescriptions[code];
+      // Standard codes
+      if (match[2]) {
+        const prefix = match[1];
+        const number = parseInt(match[2]);
+        const letter = match[3] || '';
+
+        if (prefix === 'K') {
+          explanation += `This is a <strong>K code</strong>. You're being taxed on an extra <strong>£${number * 10}</strong> of income (e.g. untaxed benefits or company car).<br>`;
+        } else {
+          explanation += `This means you have a tax-free Personal Allowance of <strong>£${number * 10}</strong>.<br>`;
+        }
+
+        const letterDescriptions = {
+          L: "Standard allowance – you’re entitled to the basic Personal Allowance.",
+          M: "Marriage Allowance – you’ve received 10% of your partner’s allowance.",
+          N: "Marriage Allowance – you’ve transferred 10% of your allowance to your partner.",
+          T: "Your situation requires further review (complex allowance or other adjustments)."
+        };
+        if (letterDescriptions[letter]) {
+          explanation += `<br><strong>Letter '${letter}':</strong> ${letterDescriptions[letter]}`;
+        }
+
+      } else if (match[1]) {
+        // Fixed codes
+        const code = match[1];
+        const fixedDescriptions = {
+          BR: "All income is taxed at the basic rate (20%). Common for second jobs.",
+          D0: "All income is taxed at the higher rate (40%).",
+          D1: "All income is taxed at the additional rate (45%).",
+          NT: "No tax will be taken from your income.",
+          "0T": "No Personal Allowance is applied – you’re taxed from the first £ earned."
+        };
+        explanation += fixedDescriptions[code];
+      }
+
+      if (emergencyIndicators.length) {
+        explanation += `<br><br><strong>Emergency Tax Code (${emergencyIndicators.join(', ')}):</strong> This means your tax is calculated on a <em>Week 1 / Month 1 basis</em> (non-cumulative).<br><br>`;
+        explanation += `In normal cumulative tax, your tax is adjusted based on how much you've earned and paid year-to-date. But under <strong>W1/M1</strong>, your tax is calculated as if you're being paid for the first time this year, every time.<br><br>`;
+        explanation += `This usually happens if you've recently changed jobs and HMRC hasn’t received your previous income info yet. It’s temporary — once HMRC gets your full data, you'll switch to cumulative and get any refund or correction due.`;
+        explanation += `<br><div style='text-align:right'><button onclick="shareUrl()">Share</button><div>`
+      }
+
+      output.innerHTML = explanation;
+      lastExplanation = explanation.replace(/<[^>]*>/g, '');
+      followup.style.display = 'block';
     }
 
-    if (emergencyIndicators.length > 0) {
-      explanation += `<br><br><strong>Emergency Tax Code (${emergencyIndicators.join(', ')}):</strong> This means your tax is calculated on a <em>Week 1 / Month 1 basis</em> (non-cumulative).<br><br>`;
-      explanation += `In normal cumulative tax, your tax is adjusted based on how much you've earned and paid year-to-date. But under <strong>W1/M1</strong>, your tax is calculated as if you're being paid for the first time this year, every time. <br><br>`;
-      explanation += `This usually happens if you've recently changed jobs and HMRC hasn’t received your previous income info yet. It’s temporary — once HMRC gets your full data, you'll switch to cumulative and get any refund or correction due.`;
+    function askChatGPT() {
+      const question = document.getElementById('followupQuestion').value.trim();
+      if (!question) return;
+      const fullQuery = encodeURIComponent(lastExplanation + "\n\nQuestion: " + question);
+      window.open(`https://chatgpt.com/?q=${fullQuery}`, '_blank');
     }
 
-    output.innerHTML = explanation;
-    lastExplanation = explanation.replace(/<[^>]*>/g, '');
-    followup.style.display = 'block';
-  }
+    // On page load: check for `?code=` param and auto-run
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      if (code) {
+        const decoded = decodeURIComponent(code);
+        document.getElementById('taxCodeInput').value = decoded;
+        explainTaxCode();
+      }
+    });
+  </script>
+  <script>
+    function shareUrl() {
+        const url = window.location.href;
+        if (navigator.share) {
+        navigator.share({
+            title: document.title,
+            url: url
+        }).catch(err => {
+            // User cancelled or error, fallback to clipboard copy
+            copyToClipboard(url);
+        });
+        } else {
+        // Fallback to clipboard copy
+        copyToClipboard(url);
+        }
+    }
 
-  function askChatGPT() {
-    const question = document.getElementById('followupQuestion').value.trim();
-    if (!question) return;
-
-    const fullQuery = encodeURIComponent(lastExplanation + "\n\nQuestion: " + question);
-    const url = `https://chatgpt.com/?q=${fullQuery}`;
-    window.open(url, '_blank');
-  }
-</script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+        alert('URL copied to clipboard!');
+        }).catch(() => {
+        alert('Failed to copy URL');
+        });
+    }
+  </script>
 
 </body>
 </html>
