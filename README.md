@@ -1,2 +1,6 @@
-# uk-tax-code-explainer
-Enter your tax code to understand what it means for you.
+# UK tax code explainer
+
+Completely front-end tax code explainer.
+
+Live on https://uk-tax-code-explainer.dutl.uk/
+
