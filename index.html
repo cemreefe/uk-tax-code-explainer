@@ -40,7 +40,7 @@
   <p>Enter a UK tax code (e.g. <code>1257L</code>, <code>BR</code>, <code>K475 M1/W1</code>):</p>
 
   <div style="display: flex; gap: 0.5rem;">
-    <input type="text" id="taxCodeInput" placeholder="Enter tax code" style="flex: 1;" />
+    <input type="text" id="taxCodeInput" placeholder="Enter tax code" style="flex: 1;" onkeydown="if(event.key==='Enter') explainTaxCode()" />
     <button onclick="explainTaxCode()">Explain</button>
   </div>
 
@@ -49,7 +49,7 @@
   <div id="followup" style="display:none;">
     <p><strong>Still have questions?</strong></p>
     <div style="display: flex; gap: 0.5rem;">
-      <input type="text" id="followupQuestion" placeholder="Ask ChatGPT something about this code..." style="flex: 1;" />
+      <input type="text" id="followupQuestion" placeholder="Ask ChatGPT something about this code..." style="flex: 1;" onkeydown="if(event.key==='Enter') askChatGPT()" />
       <button onclick="askChatGPT()">Ask ChatGPT</button>
     </div>
   </div>
